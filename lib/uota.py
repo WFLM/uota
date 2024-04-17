@@ -5,11 +5,11 @@ MIT license; Copyright (c) 2021 Martin Komon
 """
 
 import gc
+import tarfile
+
+import deflate
 import uos
 import urequests
-import deflate
-import tarfile
-from micropython import const
 
 try:
     import logging
@@ -37,14 +37,16 @@ except ImportError:
 
 ota_config = {}
 
+
 def load_ota_cfg():
     try:
         with open('uota.cfg', 'r') as f:
             ota_config.update(eval(f.read()))
         return True
     except OSError:
-        log.error('Cannot find uota config file `uota.cfg`. OTA is disabled.')
+        log.error("Cannot find uota config file 'uota.cfg'. OTA is disabled")
         return False
+
 
 def recursive_delete(path: str):
     """
@@ -88,6 +90,10 @@ def check_free_space(min_free_space: int) -> bool:
     return free_kb >= min_free_space
 
 
+def normalize_version(version: str) -> tuple[str, ...]:
+    return tuple(point.zfill(8) for point in version.split('.'))
+
+
 def check_for_updates(version_check=True, quiet=False, pubkey_hash=b'') -> bool:
     """
     Check for available updates, download new firmware if available and return True/False whether
@@ -111,7 +117,7 @@ def check_for_updates(version_check=True, quiet=False, pubkey_hash=b'') -> bool:
         log.error('Invalid or missing basic HTTP authentication!')
         return False
     if response.status_code != 200:
-        log.error('Other error: ' + response.status_code + " " + response.reason)
+        log.error(f'Other error: {response.status_code} {response.reason}')
         return False
 
     if ucertpin_available and pubkey_hash:
@@ -134,7 +140,7 @@ def check_for_updates(version_check=True, quiet=False, pubkey_hash=b'') -> bool:
             return False
         not quiet and log.warning('local version information missing, ignoring it')
 
-    if not version_check or remote_version > local_version:
+    if not version_check or normalize_version(remote_version) > normalize_version(local_version):
         not quiet and log.info(f'new version {remote_version} is available')
         if not check_free_space(min_free_space):
             not quiet and log.error('not enough free space for the new firmware')
@@ -155,12 +161,13 @@ def check_for_updates(version_check=True, quiet=False, pubkey_hash=b'') -> bool:
                     hash_obj.update(chunk)
                 f.write(chunk)
         if remote_hash and ubinascii.hexlify(hash_obj.digest()).decode() != remote_hash:
-            not quiet and log.error('hashes don\'t match, cannot install the new firmware')
+            not quiet and log.error("hashes don't match, cannot install the new firmware")
             uos.remove(ota_config['tmp_filename'])
             return False
         return True
 
     return False
+
 
 def install_new_firmware(quiet=False):
     """
