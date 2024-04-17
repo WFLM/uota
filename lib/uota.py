@@ -91,7 +91,7 @@ def check_free_space(min_free_space: int) -> bool:
 
 
 def normalize_version(version: str) -> tuple[str, ...]:
-    return tuple(point.zfill(8) for point in version.split('.'))
+    return tuple(f'{point:0>8}' for point in version.split('.'))
 
 
 def check_for_updates(version_check=True, quiet=False, pubkey_hash=b'') -> bool:
