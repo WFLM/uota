@@ -44,7 +44,7 @@ def load_ota_cfg():
             ota_config.update(eval(f.read()))
         return True
     except OSError:
-        log.error("Cannot find uota config file 'uota.cfg'. OTA is disabled")
+        log.error('Cannot find uota config file `uota.cfg`. OTA is disabled.')
         return False
 
 
@@ -161,7 +161,7 @@ def check_for_updates(version_check=True, quiet=False, pubkey_hash=b'') -> bool:
                     hash_obj.update(chunk)
                 f.write(chunk)
         if remote_hash and ubinascii.hexlify(hash_obj.digest()).decode() != remote_hash:
-            not quiet and log.error("hashes don't match, cannot install the new firmware")
+            not quiet and log.error('hashes don\'t match, cannot install the new firmware')
             uos.remove(ota_config['tmp_filename'])
             return False
         return True
